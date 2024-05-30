@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://bpmn.io/schema/bpmn" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:yaoqiang="http://bpmn.sourceforge.net" exporter="Camunda Modeler" exporterVersion="4.6.0" expressionLanguage="http://www.w3.org/1999/XPath" id="Definitions_1" name="" targetNamespace="http://bpmn.io/schema/bpmn" typeLanguage="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://bpmn.sourceforge.net/schemas/BPMN20.xsd">
+  <bpmn:process id="loan_process" isClosed="false" isExecutable="true" name="Granting Loans" processType="None">
+    <bpmn:extensionElements>
+      <yaoqiang:description/>
+      <yaoqiang:pageFormat height="841.8897637795276" imageableHeight="831.8897637795276" imageableWidth="588.1102362204724" imageableX="5.0" imageableY="5.0" orientation="0" width="598.1102362204724"/>
+      <yaoqiang:page background="#FFFFFF" horizontalCount="1" verticalCount="1"/>
+    </bpmn:extensionElements>
+    <bpmn:sequenceFlow id="SequenceFlow_0nww3wx" sourceRef="StartEvent_1" targetRef="Task_1lvjtd4"/>
+    <bpmn:serviceTask camunda:topic="creditScoreChecker" camunda:type="external" completionQuantity="1" id="Task_1lvjtd4" implementation="##WebService" isForCompensation="false" name="Check credit score" startQuantity="1">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <inputOutput>
+            <camunda:inputParameter name="Input_2rvtuu9">
+              <inputParameter>
+                <camunda:script scriptFormat="javascript">
+                  <script>execution.setVariable("defaultScore", 5);</script>
+                </camunda:script>
+              </inputParameter>
+            </camunda:inputParameter>
+          </inputOutput>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0nww3wx</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_12biatx</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:subProcess completionQuantity="1" id="SubProcess_16kr5xn" isForCompensation="false" name="Decide if a loan is granted" startQuantity="1" triggeredByEvent="false">
+      <bpmn:incoming>SequenceFlow_12biatx</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1pbe3dr</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics behavior="All" camunda:collection="${creditScores}" camunda:elementVariable="score" isSequential="false"/>
+      <bpmn:exclusiveGateway gatewayDirection="Unspecified" id="ExclusiveGateway_12xhuxz">
+        <bpmn:incoming>SequenceFlow_04c54bl</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_17zmvol</bpmn:outgoing>
+        <bpmn:outgoing>SequenceFlow_0vpum3q</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:endEvent id="EndEvent_1alwvtl">
+        <bpmn:incoming>SequenceFlow_0crpu1y</bpmn:incoming>
+        <bpmn:inputSet/>
+      </bpmn:endEvent>
+      <bpmn:endEvent id="EndEvent_0zj88y0">
+        <bpmn:incoming>SequenceFlow_1p8qb0a</bpmn:incoming>
+        <bpmn:inputSet/>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_17zmvol" name="good score" sourceRef="ExclusiveGateway_12xhuxz" targetRef="Task_0v4gadf">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression"><![CDATA[${score > 5}]]></bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SequenceFlow_0vpum3q" name="bad score" sourceRef="ExclusiveGateway_12xhuxz" targetRef="Task_0j0sjlk">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression"><![CDATA[${score <= 5}]]></bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SequenceFlow_0crpu1y" sourceRef="Task_0v4gadf" targetRef="EndEvent_1alwvtl"/>
+      <bpmn:sequenceFlow id="SequenceFlow_1p8qb0a" sourceRef="Task_0j0sjlk" targetRef="EndEvent_0zj88y0"/>
+      <bpmn:startEvent id="StartEvent_01840xx" isInterrupting="true" parallelMultiple="false">
+        <bpmn:outgoing>SequenceFlow_04c54bl</bpmn:outgoing>
+        <bpmn:outputSet/>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_04c54bl" sourceRef="StartEvent_01840xx" targetRef="ExclusiveGateway_12xhuxz"/>
+      <bpmn:serviceTask camunda:topic="loanGranter" camunda:type="external" completionQuantity="1" id="Task_0v4gadf" implementation="##WebService" isForCompensation="false" name="Grant loan" startQuantity="1">
+        <bpmn:incoming>SequenceFlow_17zmvol</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_0crpu1y</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:serviceTask camunda:topic="requestRejecter" camunda:type="external" completionQuantity="1" id="Task_0j0sjlk" implementation="##WebService" isForCompensation="false" name="Reject loan request" startQuantity="1">
+        <bpmn:incoming>SequenceFlow_0vpum3q</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_1p8qb0a</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:textAnnotation id="TextAnnotation_0u1nkri" textFormat="text/plain">
+        <bpmn:text>Topic name: loanGranter</bpmn:text>
+      </bpmn:textAnnotation>
+      <bpmn:association associationDirection="None" id="Association_1v9v6fl" sourceRef="Task_0v4gadf" targetRef="TextAnnotation_0u1nkri"/>
+      <bpmn:textAnnotation id="TextAnnotation_0qjs0yj" textFormat="text/plain">
+        <bpmn:text>Topic name: requestRejecter</bpmn:text>
+      </bpmn:textAnnotation>
+      <bpmn:association associationDirection="None" id="Association_1gskhvh" sourceRef="Task_0j0sjlk" targetRef="TextAnnotation_0qjs0yj"/>
+    </bpmn:subProcess>
+    <bpmn:endEvent id="EndEvent_0q9wl5o">
+      <bpmn:incoming>SequenceFlow_1pbe3dr</bpmn:incoming>
+      <bpmn:inputSet/>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1pbe3dr" sourceRef="SubProcess_16kr5xn" targetRef="EndEvent_0q9wl5o"/>
+    <bpmn:sequenceFlow id="SequenceFlow_12biatx" sourceRef="Task_1lvjtd4" targetRef="SubProcess_16kr5xn"/>
+    <bpmn:startEvent id="StartEvent_1" isInterrupting="true" parallelMultiple="false">
+      <bpmn:outgoing>SequenceFlow_0nww3wx</bpmn:outgoing>
+      <bpmn:outputSet/>
+      <bpmn:timerEventDefinition id="StartEvent_1_ED_1">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression"><![CDATA[0/5 0/1 * 1/1 * ? *]]></bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:startEvent>
+    <bpmn:textAnnotation id="TextAnnotation_0k1pblj" textFormat="text/plain">
+      <bpmn:text>Topic name: creditScoreChecker</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association associationDirection="None" id="Association_0rosxy5" sourceRef="Task_1lvjtd4" targetRef="TextAnnotation_0k1pblj"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Yaoqiang_Diagram-loan_process" name="Untitled Diagram" resolution="96.0">
+    <bpmndi:BPMNPlane bpmnElement="loan_process">
+      <bpmndi:BPMNShape bpmnElement="Task_1lvjtd4" id="Yaoqiang-Task_1lvjtd4">
+        <dc:Bounds height="80.0" width="100.0" x="234.0" y="239.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="35.63" width="66.0" x="251.0" y="263.18"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="SubProcess_16kr5xn" id="Yaoqiang-SubProcess_16kr5xn" isExpanded="true">
+        <dc:Bounds height="384.0" width="530.0" x="384.0" y="81.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="131.0" x="399.0" y="86.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndEvent_0q9wl5o" id="Yaoqiang-EndEvent_0q9wl5o">
+        <dc:Bounds height="32.0" width="32.0" x="968.0" y="261.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="1163.0" y="307.16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="StartEvent_1" id="Yaoqiang-StartEvent_1">
+        <dc:Bounds height="32.0" width="32.0" x="152.0" y="262.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="302.0" y="305.16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="TextAnnotation_0k1pblj" id="Yaoqiang-TextAnnotation_0k1pblj">
+        <dc:Bounds height="28.0" width="187.0" x="190.0" y="180.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="163.0" x="190.0" y="185.68"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="ExclusiveGateway_12xhuxz" id="Yaoqiang-ExclusiveGateway_12xhuxz" isMarkerVisible="true">
+        <dc:Bounds height="42.0" width="42.0" x="498.0" y="251.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="780.0" y="269.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndEvent_1alwvtl" id="Yaoqiang-EndEvent_1alwvtl">
+        <dc:Bounds height="32.0" width="32.0" x="830.0" y="189.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="1025.0" y="227.16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="EndEvent_0zj88y0" id="Yaoqiang-EndEvent_0zj88y0">
+        <dc:Bounds height="32.0" width="32.0" x="830.0" y="324.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="1025.0" y="362.16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="StartEvent_01840xx" id="Yaoqiang-StartEvent_01840xx">
+        <dc:Bounds height="32.0" width="32.0" x="421.0" y="258.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="616.0" y="296.16"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Task_0v4gadf" id="Yaoqiang-Task_0v4gadf">
+        <dc:Bounds height="80.0" width="100.0" x="649.0" y="167.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="56.0" x="671.0" y="198.68"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="Task_0j0sjlk" id="Yaoqiang-Task_0j0sjlk">
+        <dc:Bounds height="80.0" width="100.0" x="649.0" y="302.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="35.63" width="59.0" x="669.5" y="326.18"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="TextAnnotation_0u1nkri" id="Yaoqiang-TextAnnotation_0u1nkri">
+        <dc:Bounds height="28.0" width="161.0" x="618.0" y="119.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="124.0" x="618.0" y="124.68"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="TextAnnotation_0qjs0yj" id="Yaoqiang-TextAnnotation_0qjs0yj">
+        <dc:Bounds height="30.0" width="171.0" x="631.0" y="400.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="144.0" x="631.0" y="406.68"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_1p8qb0a" id="Yaoqiang-SequenceFlow_1p8qb0a">
+        <di:waypoint x="749.409090909091" y="342.0"/>
+        <di:waypoint x="830.4096720146849" y="340.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="786.5" y="330.28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="Association_1gskhvh" id="Yaoqiang-Association_1gskhvh">
+        <di:waypoint x="708.9354100951" y="381.8636363636364"/>
+        <di:waypoint x="713.222253728804" y="399.8636363636364"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="708.08" y="380.55"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="Association_0rosxy5" id="Yaoqiang-Association_0rosxy5">
+        <di:waypoint x="284.13582289739026" y="238.86363636363637"/>
+        <di:waypoint x="283.9240401883222" y="207.86363636363637"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="281.03" y="213.05"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_0vpum3q" id="Yaoqiang-SequenceFlow_0vpum3q">
+        <di:waypoint x="523.0" y="289.27272727272737"/>
+        <di:waypoint x="523.0" y="342.0"/>
+        <di:waypoint x="649.409090909091" y="342.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="35.63" width="72.0" x="523.84" y="324.18"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_1pbe3dr" id="Yaoqiang-SequenceFlow_1pbe3dr">
+        <di:waypoint x="914.409090909091" y="273.0"/>
+        <di:waypoint x="968.4096720146849" y="277.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="938.0" y="265.09"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_12biatx" id="Yaoqiang-SequenceFlow_12biatx">
+        <di:waypoint x="334.409090909091" y="279.0"/>
+        <di:waypoint x="384.409090909091" y="273.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="356.0" y="265.28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_17zmvol" id="Yaoqiang-SequenceFlow_17zmvol">
+        <di:waypoint x="523.0" y="254.45454545454538"/>
+        <di:waypoint x="523.0" y="207.0"/>
+        <di:waypoint x="649.409090909091" y="207.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="35.63" width="66.0" x="529.48" y="189.18"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="Association_1v9v6fl" id="Yaoqiang-Association_1v9v6fl">
+        <di:waypoint x="699.0872024970738" y="166.86363636363637"/>
+        <di:waypoint x="698.9262582910652" y="146.86363636363637"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="696.01" y="146.55"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_0nww3wx" id="Yaoqiang-SequenceFlow_0nww3wx">
+        <di:waypoint x="184.40850980349705" y="278.0"/>
+        <di:waypoint x="234.409090909091" y="279.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="206.0" y="268.59"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_04c54bl" id="Yaoqiang-SequenceFlow_04c54bl">
+        <di:waypoint x="453.40850980349705" y="274.0"/>
+        <di:waypoint x="498.5454545454546" y="272.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="472.5" y="262.21"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="SequenceFlow_0crpu1y" id="Yaoqiang-SequenceFlow_0crpu1y">
+        <di:waypoint x="749.409090909091" y="207.0"/>
+        <di:waypoint x="830.4096720146849" y="205.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="20.63" width="6.0" x="786.5" y="195.28"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
